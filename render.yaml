@@ -1,0 +1,62 @@
+databases:
+  - name: hostel-db
+    databaseName: hostel_management
+    user: hostel_admin
+    plan: free
+
+services:
+  # --- Spring Boot API ---
+  - type: web
+    name: hostel-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /api/actuator/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: prod
+      - key: DB_HOST
+        fromDatabase:
+          name: hostel-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: hostel-db
+          property: port
+      - key: DB_NAME
+        fromDatabase:
+          name: hostel-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: hostel-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: hostel-db
+          property: password
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://hostel-frontend.onrender.com
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+
+  # --- React/Vite frontend, served as a static site ---
+  - type: web
+    name: hostel-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    plan: free
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://hostel-backend.onrender.com/api
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

@@ -1,0 +1,54 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: hostel-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: hostel_management
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - hostel_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ../backend
+      dockerfile: Dockerfile
+    container_name: hostel-backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      DB_URL: jdbc:postgresql://postgres:5432/hostel_management
+      DB_USERNAME: postgres
+      DB_PASSWORD: postgres
+      JWT_SECRET: VGhpc0lzQVZlcnlTZWN1cmVTZWNyZXRLZXlGb3JIb3N0ZWxNYW5hZ2VtZW50U3lzdGVtSldUMjAyNA==
+    ports:
+      - "8080:8080"
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: ../docker/frontend.Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:8080/api
+    container_name: hostel-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  hostel_pg_data:

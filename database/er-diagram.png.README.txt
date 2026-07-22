@@ -1,0 +1,2 @@
+Placeholder: generate an ER diagram image from schema.sql (e.g. using dbdiagram.io,
+pgAdmin's ERD tool, or `schemaspy`) and save it here as er-diagram.png.
